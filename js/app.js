@@ -1,13 +1,17 @@
+import {OrbitControls} from 'https://unpkg.com/three@0.108.0/examples/jsm/controls/OrbitControls.js';
+
 var APP = {
 
 	Player: function () {
-
 		var renderer = new THREE.WebGLRenderer( { antialias: true } );
 		renderer.setPixelRatio( window.devicePixelRatio ); // TODO: Use player.setPixelRatio()
 		renderer.outputEncoding = THREE.sRGBEncoding;
 
 		var loader = new THREE.ObjectLoader();
-		var camera, scene;
+
+		var animLoader = new THREE.AnimationLoader();
+
+		var camera, scene, animations;
 
 		var vrButton = VRButton.createButton( renderer ); // eslint-disable-line no-undef
 
@@ -16,10 +20,15 @@ var APP = {
 		var dom = document.createElement( 'div' );
 		dom.appendChild( renderer.domElement );
 
+		// var controls = new THREE.OrbitControls( camera, renderer.domElement)
+		console.log(OrbitControls)
+
 		this.dom = dom;
 
 		this.width = 500;
 		this.height = 500;
+
+		let mixer;
 
 		this.load = function ( json ) {
 
@@ -34,6 +43,15 @@ var APP = {
 
 			this.setScene( loader.parse( json.scene ) );
 			this.setCamera( loader.parse( json.camera ) );
+			this.setAnimations( animLoader.parse(json.scene.animations) );
+			
+			mixer = new THREE.AnimationMixer( scene );
+			const clip = THREE.AnimationClip.findByName( animations, 'Armature|mixamo.com|Layer0' );
+			const action = mixer.clipAction(clip);
+			action.play();
+
+			const controls = new OrbitControls( camera, renderer.domElement )
+			controls.autoRotate == true;
 
 			events = {
 				init: [],
@@ -115,6 +133,12 @@ var APP = {
 
 		};
 
+		this.setAnimations = function ( value ) {
+
+			animations = value;
+
+		}
+
 		this.setPixelRatio = function ( pixelRatio ) {
 
 			renderer.setPixelRatio( pixelRatio );
@@ -149,20 +173,24 @@ var APP = {
 
 		var time, startTime, prevTime;
 
+		const clock = new THREE.Clock();
 		function animate() {
+			const dt = clock.getDelta();
+			mixer.update(dt)
 
 			time = performance.now();
 
 			try {
-
+				// console.log(events)
 				dispatch( events.update, { time: time - startTime, delta: time - prevTime } );
+				// dispatch( animations, { time: time - startTime, delta: time - prevTime } );
 
 			} catch ( e ) {
 
 				console.error( ( e.message || e ), ( e.stack || '' ) );
 
 			}
-
+			
 			renderer.render( scene, camera );
 
 			prevTime = time;
@@ -170,7 +198,6 @@ var APP = {
 		}
 
 		this.play = function () {
-
 			if ( renderer.xr.enabled ) dom.append( vrButton );
 
 			startTime = prevTime = performance.now();
@@ -251,8 +278,8 @@ var APP = {
 			dispatch( events.pointermove, event );
 
 		}
-
 	}
+	
 
 };
 
