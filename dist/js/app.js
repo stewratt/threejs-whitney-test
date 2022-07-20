@@ -50,8 +50,8 @@ var APP = {
 			const action = mixer.clipAction(clip);
 			action.play();
 
-			const controls = new OrbitControls( camera, renderer.domElement )
-			controls.autoRotate == true;
+			// const controls = new OrbitControls( camera, renderer.domElement )
+			// controls.autoRotate == true;
 
 			events = {
 				init: [],
